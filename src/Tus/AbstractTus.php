@@ -5,6 +5,7 @@ namespace TusPhp\Tus;
 use TusPhp\Cache\Cacheable;
 use TusPhp\Cache\CacheFactory;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 abstract class AbstractTus
 {
@@ -32,7 +33,7 @@ abstract class AbstractTus
     /** @var string */
     protected $apiPath = '/files';
 
-    /** @var EventDispatcher */
+    /** @var EventDispatcherInterface */
     protected $dispatcher;
 
     /**
@@ -44,7 +45,7 @@ abstract class AbstractTus
      *
      * @return self
      */
-    public function setCache($cache) : self
+    public function setCache($cache): self
     {
         if (\is_string($cache)) {
             $this->cache = CacheFactory::make($cache);
@@ -64,7 +65,7 @@ abstract class AbstractTus
      *
      * @return Cacheable
      */
-    public function getCache() : Cacheable
+    public function getCache(): Cacheable
     {
         return $this->cache;
     }
@@ -76,7 +77,7 @@ abstract class AbstractTus
      *
      * @return self
      */
-    public function setApiPath(string $path) : self
+    public function setApiPath(string $path): self
     {
         $this->apiPath = $path;
 
@@ -88,7 +89,7 @@ abstract class AbstractTus
      *
      * @return string
      */
-    public function getApiPath() : string
+    public function getApiPath(): string
     {
         return $this->apiPath;
     }
@@ -96,14 +97,28 @@ abstract class AbstractTus
     /**
      * Set and get event dispatcher.
      *
-     * @return EventDispatcher
+     * @return EventDispatcherInterface
      */
-    public function event() : EventDispatcher
+    public function event(): EventDispatcherInterface
     {
         if ( ! $this->dispatcher) {
             $this->dispatcher = new EventDispatcher();
         }
 
         return $this->dispatcher;
+    }
+
+    /**
+     * Set event dispatcher.
+     *
+     * @param EventDispatcherInterface $dispatcher
+     *
+     * @return self
+     */
+    public function setDispatcher(EventDispatcherInterface $dispatcher): self
+    {
+        $this->dispatcher = $dispatcher;
+
+        return $this;
     }
 }

@@ -1,11 +1,11 @@
-﻿<h1 align="center">TusPHP</h1>
+<h1 align="center">TusPHP</h1>
 
 <p align="center">
     <a href="https://packagist.org/packages/ankitpokhrel/tus-php">
-        <img alt="PHP Version" src="https://img.shields.io/badge/php-7.1.3%2B-brightgreen.svg?style=flat-square" />
+        <img alt="PHP Version" src="https://img.shields.io/badge/php-7.2.5%2B-brightgreen.svg?style=flat-square" />
     </a>
-    <a href="https://travis-ci.org/ankitpokhrel/tus-php">
-        <img alt="Build Status" src="https://img.shields.io/travis/ankitpokhrel/tus-php/master.svg?style=flat-square" />
+    <a href="https://github.com/ankitpokhrel/tus-php/actions/workflows/ci.yml?query=branch%3Amain+is%3Acompleted">
+        <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/ankitpokhrel/tus-php/ci.yml?branch=main&style=flat-square" />
     </a>
     <a href="https://scrutinizer-ci.com/g/ankitpokhrel/tus-php">
         <img alt="Code Coverage" src="https://img.shields.io/scrutinizer/coverage/g/ankitpokhrel/tus-php.svg?style=flat-square" />
@@ -16,7 +16,7 @@
     <a href="https://packagist.org/packages/ankitpokhrel/tus-php">
         <img alt="Downloads" src="https://img.shields.io/packagist/dm/ankitpokhrel/tus-php.svg?style=flat-square" />
     </a>
-    <a href="https://github.com/ankitpokhrel/tus-php/blob/master/LICENSE">
+    <a href="https://github.com/ankitpokhrel/tus-php/blob/main/LICENSE">
         <img alt="Software License" src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square" />
     </a>
 </p>
@@ -26,8 +26,12 @@
 </p>
 
 <p align="center">
-    <img alt="TusPHP Demo" src="https://github.com/ankitpokhrel/tus-php/blob/master/example/demo.gif" /><br/><br/>
+    <img alt="TusPHP Demo" src="https://github.com/ankitpokhrel/tus-php/blob/main/example/demo.gif" /><br/><br/>
     <a href="https://medium.com/@ankitpokhrel/resumable-file-upload-in-php-handle-large-file-uploads-in-an-elegant-way-e6c6dfdeaedb">Medium Article</a>&nbsp;⚡&nbsp;<a href="https://github.com/ankitpokhrel/tus-php/wiki/Laravel-&-Lumen-Integration">Laravel & Lumen Integration</a>&nbsp;⚡&nbsp;<a href="https://github.com/ankitpokhrel/tus-php/wiki/Symfony-Integration">Symfony Integration</a>&nbsp;⚡&nbsp;<a href="https://github.com/ankitpokhrel/tus-php/wiki/CakePHP-Integration">CakePHP Integration</a>&nbsp;⚡&nbsp;<a href="https://github.com/ankitpokhrel/tus-php/wiki/WordPress-Integration">WordPress Integration</a>
+</p>
+
+<p align="center">
+    <a href="https://opencollective.com/tus-php#backers" target="_blank" align="center"><img src="https://opencollective.com/tus-php/backers.svg"></a>
 </p>
 
 **tus** is a HTTP based protocol for resumable file uploads. Resumable means you can carry on where you left off without
@@ -55,7 +59,6 @@ to pause, or by accident in case of a network issue or server outage.
     * [Skipping a Middleware](#skipping-a-middleware)
 * [Setting up a dev environment and/or running examples locally](#setting-up-a-dev-environment-andor-running-examples-locally)
     * [Docker](#docker)
-    * [Kubernetes with minikube](#kubernetes-with-minikube)
 * [Contributing](#contributing)
 * [Questions about this project?](#questions-about-this-project)
 * [Supporters](#supporters)
@@ -66,9 +69,9 @@ Pull the package via composer.
 ```shell
 $ composer require ankitpokhrel/tus-php
 
-// Use symfony-5 branch for Symfony 5+
+// Use v1 for php7.1, Symfony 3 or 4.
 
-$ composer require ankitpokhrel/tus-php:dev-symfony-5
+$ composer require ankitpokhrel/tus-php:^1.2
 ```
 
 ### Usage
@@ -82,13 +85,16 @@ This is how a simple server looks like.
 ```php
 // server.php
 
-$server   = new \TusPhp\Tus\Server('redis'); // Either redis, file or apcu. Leave empty for file based cache.
+// Either redis, file or apcu. Leave empty for file based cache.
+$server   = new \TusPhp\Tus\Server('redis');
 $response = $server->serve();
 
 $response->send();
 
 exit(0); // Exit from current PHP process.
 ```
+
+> :bangbang: File based cache is not recommended for production use.
 
 You need to rewrite your server to respond to a specific endpoint. For example:
 
@@ -100,6 +106,24 @@ location /files {
     try_files $uri $uri/ /server.php?$query_string;
 }
 ```
+
+A new config option [fastcgi_request_buffering](http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_request_buffering) is available since nginx 1.7.11.
+When buffering is enabled, the entire request body is read from the client before sending the request to a FastCGI server. Disabling this option might help with timeouts during the upload.
+Furthermore, it helps if you’re running out of disc space on the tmp partition of your system.
+
+If you do not turn off `fastcgi_request_buffering` and you use `fastcgi`, you will not be able to resume uploads because nginx will not give the request back to PHP until the entire file is uploaded.
+
+```nginx
+location ~ \.php$ {
+    # ...
+
+    fastcgi_request_buffering off; # Disable request buffering
+    
+    # ...
+}
+```
+
+A sample nginx configuration can be found [here](docker/server/configs/default.conf).
 
 ###### Apache
 ```apache
@@ -403,89 +427,82 @@ $server->middleware()->skip(Cors::class, AnotherMiddleware::class);
  ```
 
 ### Setting up a dev environment and/or running examples locally
-An ajax based example for this implementation can be found in `examples/` folder. You can either build and run it using docker or use kubernetes locally with minikube.
+An ajax based example for this implementation can be found in `examples/` folder. You can build and run it using docker as described below.
 
 #### Docker
 Make sure that [docker](https://docs.docker.com/engine/installation/) and [docker-compose](https://docs.docker.com/compose/install/)
 are installed in your system. Then, run docker script from project root.
 ```shell
+# PHP7
+$ make dev
+
+# PHP8
+$ make dev8
+
+# or, without make
+
+# PHP7
 $ bin/docker.sh
+
+# PHP8
+$ PHP_VERSION=8 bin/docker.sh
 ```
 
-Now, the client can be accessed at http://0.0.0.0:8080 and server can be accessed at http://0.0.0.0:8081. Default API endpoint is set to`/files`
+Now, the client can be accessed at http://0.0.0.0:8080 and the server can be accessed at http://0.0.0.0:8081. The default API endpoint is set to`/files`
 and uploaded files can be found inside `uploads` folder. All docker configs can be found in `docker/` folder.
 
-We also have some utility scripts to re-create docker images.
-
-Please note that `bin/rebuild.sh` will delete tus-php related docker containers and images.
-It will also delete `uploads` folder and re-create it. So that when you use `bin/docker.sh`
-it will be like a fresh start. This command is useful when you start to make changes
-to docker configurations, server configrations.
-
+If you want a fresh start then you can use the following commands. It will delete and recreate all containers, images, and uploads folder.
 ```shell
-$ bin/rebuild.sh
-$ bin/docker.sh
+# PHP7
+$ make dev-fresh
+
+# PHP8
+$ make dev8-fresh
+
+# or, without make
+
+# PHP7
+$ bin/clean.sh && bin/docker.sh
+
+# PHP8
+$ bin/clean.sh && PHP_VERSION=8 bin/docker.sh
 ```
 
-#### Kubernetes with minikube
-Make sure you have [minikube](https://github.com/kubernetes/minikube) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-are installed in your system. Then, build and spin up containers using k8s script from project root.
-```shell
-$ bin/k8s.sh
-```
-
-The script will set minikube docker env, build all required docker images locally, create kubernetes objects and serve client at port `30020`. After successful build,
-the client can be accessed at http://192.168.99.100:30020 and server can be accessed at http://192.168.99.100:30021.
-
-The script will create 1 client replica and 3 server replicas by default. All kubernetes configs can be found inside `k8s/` folder, you can tweak it as required.
-
-You can use another helper script while using minikube to list all uploaded files, login to redis and clear redis cache.
-```shell
-# List all uploads
-$ bin/minikube.sh uploads
-
-# Login to redis
-$ bin/minikube.sh redis
-
-# Clear redis cache
-$ bin/minikube.sh clear-cache
-```
-
-Since the server supports tus expiration extension, a cron job is set to run once a day at midnight to free server resources. You can adjust it as required in `k8s/cron.yml`.
+We also have some utility scripts that will ease your local development experience. See [Makefile](Makefile) for a list of all available commands.
+If you are not using [make](https://www.gnu.org/software/make/manual/make.html#Overview), then you can use shell scripts available [here](bin).
 
 ### Contributing
 1. Install [PHPUnit](https://phpunit.de/) and [composer](https://getcomposer.org/) if you haven't already.
 2. Install dependencies
      ```shell
+     $ make vendor
+     
+     # or
+     
      $ composer install
      ```
 3. Run tests with phpunit
     ```shell
-    $ ./vendor/bin/phpunit
-
+    $ make test
+    
     # or
-
+    
     $ composer test
+    
+    # or
+    
+    $ ./vendor/bin/phpunit
     ```
 4. Validate changes against [PSR2 Coding Standards](http://www.php-fig.org/psr/psr-2/)
     ```shell
-    $ composer cs-fixer
-
-    # or
-
-    $ ./vendor/bin/php-cs-fixer fix <changes>
+    # fix lint issues
+    $ make lint
+    
+    # dry run
+    $ make lint-dry
     ```
 
-_Note:_ There is an extra command `composer test-coverage` that will generate coverage
-at project root. You can open `coverage/index.html` to checkout coverage report.
-
-```shell
-# Command to Generate Coverage
-$ docker exec tus-php-server composer test-coverage
-```
+You can use `xdebug enable` and `xdebug disable` to enable and disable [Xdebug](https://xdebug.org/) inside the container. 
 
 ### Questions about this project?
 Please feel free to report any bug found. Pull requests, issues, and project recommendations are more than welcome!
-
-### Supporters
-[![JET BRAINS](.github/jetbrains.png)](https://www.jetbrains.com/?from=ankitpokhrel/tus-php)

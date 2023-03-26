@@ -18,7 +18,7 @@ class ConfigTest extends TestCase
      *
      * @return void
      */
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -31,7 +31,7 @@ class ConfigTest extends TestCase
      * @covers ::set
      * @covers ::get
      */
-    public function it_loads_config_from_array()
+    public function it_loads_config_from_array(): void
     {
         $config = [
             'redis' => [
@@ -55,8 +55,44 @@ class ConfigTest extends TestCase
      *
      * @covers ::set
      * @covers ::get
+     * @covers ::getCacheHome
      */
-    public function it_loads_config_from_file()
+    public function it_gets_path_from_tus_cache_home_env(): void
+    {
+        putenv('TUS_CACHE_HOME=/tmp');
+
+        Config::set(__DIR__ . '/Fixtures/config.php', true);
+
+        $this->assertEquals('/tmp/.cache/', Config::get('file.dir'));
+
+        putenv('TUS_CACHE_HOME');
+    }
+
+    /**
+     * @test
+     *
+     * @covers ::set
+     * @covers ::get
+     * @covers ::getCacheHome
+     */
+    public function it_gets_path_from_xdg_cache_home_env(): void
+    {
+        putenv('XDG_CACHE_HOME=/tmp');
+
+        Config::set(__DIR__ . '/Fixtures/config.php', true);
+
+        $this->assertEquals('/tmp/.cache/', Config::get('file.dir'));
+
+        putenv('XDG_CACHE_HOME');
+    }
+
+    /**
+     * @test
+     *
+     * @covers ::set
+     * @covers ::get
+     */
+    public function it_loads_config_from_file(): void
     {
         Config::set(__DIR__ . '/Fixtures/config.php', true);
 
@@ -69,7 +105,7 @@ class ConfigTest extends TestCase
      * @covers ::set
      * @covers ::get
      */
-    public function it_should_not_load_config_if_config_is_set()
+    public function it_should_not_load_config_if_config_is_set(): void
     {
         Config::set([]);
 
@@ -82,7 +118,7 @@ class ConfigTest extends TestCase
      *
      * @covers ::get
      */
-    public function it_gets_value_for_a_key()
+    public function it_gets_value_for_a_key(): void
     {
         $this->assertEquals($this->config['redis'], Config::get('redis'));
         $this->assertEquals($this->config['redis']['host'], Config::get('redis.host'));
@@ -94,7 +130,7 @@ class ConfigTest extends TestCase
      *
      * @covers ::get
      */
-    public function it_returns_null_for_invalid_key()
+    public function it_returns_null_for_invalid_key(): void
     {
         $this->assertNull(Config::get('redis.invalid'));
     }

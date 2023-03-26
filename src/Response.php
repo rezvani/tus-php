@@ -19,21 +19,13 @@ class Response
     protected $headers = [];
 
     /**
-     * Response constructor.
-     */
-    public function __construct()
-    {
-        $this->response = new HttpResponse;
-    }
-
-    /**
      * Set create only.
      *
      * @param bool $state
      *
      * @return self
      */
-    public function createOnly(bool $state) : self
+    public function createOnly(bool $state): self
     {
         $this->createOnly = $state;
 
@@ -47,7 +39,7 @@ class Response
      *
      * @return Response
      */
-    public function setHeaders(array $headers) : self
+    public function setHeaders(array $headers): self
     {
         $this->headers += $headers;
 
@@ -61,7 +53,7 @@ class Response
      *
      * @return Response
      */
-    public function replaceHeaders(array $headers) : self
+    public function replaceHeaders(array $headers): self
     {
         $this->headers = $headers;
 
@@ -73,7 +65,7 @@ class Response
      *
      * @return array
      */
-    public function getHeaders() : array
+    public function getHeaders(): array
     {
         return $this->headers;
     }
@@ -83,7 +75,7 @@ class Response
      *
      * @return bool
      */
-    public function getCreateOnly() : bool
+    public function getCreateOnly(): bool
     {
         return $this->createOnly;
     }
@@ -97,7 +89,7 @@ class Response
      *
      * @return HttpResponse
      */
-    public function send($content, int $status = HttpResponse::HTTP_OK, array $headers = []) : HttpResponse
+    public function send($content, int $status = HttpResponse::HTTP_OK, array $headers = []): HttpResponse
     {
         $headers = array_merge($this->headers, $headers);
 
@@ -105,7 +97,7 @@ class Response
             $content = json_encode($content);
         }
 
-        $response = $this->response::create($content, $status, $headers);
+        $response = new HttpResponse($content, $status, $headers);
 
         return $this->createOnly ? $response : $response->send();
     }
@@ -114,7 +106,7 @@ class Response
      * Create a new file download response.
      *
      * @param \SplFileInfo|string $file
-     * @param string              $name
+     * @param string|null         $name
      * @param array               $headers
      * @param string|null         $disposition
      *
@@ -125,7 +117,7 @@ class Response
         string $name = null,
         array $headers = [],
         string $disposition = ResponseHeaderBag::DISPOSITION_ATTACHMENT
-    ) : BinaryFileResponse {
+    ): BinaryFileResponse {
         $response = new BinaryFileResponse($file, HttpResponse::HTTP_OK, $headers, true, $disposition);
 
         $response->prepare(HttpRequest::createFromGlobals());

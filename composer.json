@@ -10,22 +10,22 @@
     }
   ],
   "require": {
-    "php": "^7.1.3",
+    "php": "^7.2.5 || ^8.0",
     "ext-json": "*",
     "guzzlehttp/guzzle": "^7.3",
     "nesbot/carbon": "^1.26.3 || ^2.0",
-    "predis/predis": "^1.1",
-    "ramsey/uuid": "^3.7",
-    "symfony/console": "^3.4 || ^4.0",
-    "symfony/event-dispatcher": "^3.4 || ^4.0",
-    "symfony/http-foundation": "^3.4 || ^4.2"
+    "predis/predis": "^1.1 || ^2.0",
+    "ramsey/uuid": "^3.7 || ^4.0",
+    "symfony/console": "^5.0 || ^6.0",
+    "symfony/event-dispatcher": "^5.0 || ^6.0",
+    "symfony/http-foundation": "^5.0.7 || ^6.0",
+    "symfony/mime": "^5.0.9 || ^6.0"
   },
   "require-dev": {
     "ext-pcntl": "*",
-    "friendsofphp/php-cs-fixer": "^2.9",
-    "mockery/mockery": "^1.3.0",
-    "php-mock/php-mock": "^2.0",
-    "phpunit/phpunit": "7.5.18"
+    "friendsofphp/php-cs-fixer": "^3.0",
+    "mockery/mockery": "^1.3.4 || ^1.4.2",
+    "phpunit/phpunit": "^8.5.19 || ^9.4"
   },
   "autoload": {
     "psr-4": {
@@ -42,12 +42,15 @@
     "sort-packages": true
   },
   "scripts": {
-    "test": "phpunit",
-    "test-coverage": "vendor/bin/phpunit --coverage-html ./coverage",
-    "cs-fixer": "vendor/bin/php-cs-fixer fix",
-    "lint": "vendor/bin/php-cs-fixer fix --diff --dry-run"
+    "test": "xdebug disable && vendor/bin/phpunit",
+    "test-coverage": "xdebug enable && vendor/bin/phpunit --coverage-html ./coverage"
   },
   "bin": [
     "bin/tus"
-  ]
+  ],
+  "extra": {
+    "branch-alias": {
+      "dev-main": "2.3-dev"
+    }
+  }
 }

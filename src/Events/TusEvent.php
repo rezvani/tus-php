@@ -5,7 +5,7 @@ namespace TusPhp\Events;
 use TusPhp\File;
 use TusPhp\Request;
 use TusPhp\Response;
-use Symfony\Component\EventDispatcher\Event;
+use Symfony\Contracts\EventDispatcher\Event;
 
 class TusEvent extends Event
 {
@@ -23,7 +23,7 @@ class TusEvent extends Event
      *
      * @return File
      */
-    public function getFile() : File
+    public function getFile(): File
     {
         return $this->file;
     }
@@ -33,7 +33,7 @@ class TusEvent extends Event
      *
      * @return Request
      */
-    public function getRequest() : Request
+    public function getRequest(): Request
     {
         return $this->request;
     }
@@ -43,7 +43,7 @@ class TusEvent extends Event
      *
      * @return Response
      */
-    public function getResponse() : Response
+    public function getResponse(): Response
     {
         return $this->response;
     }
